@@ -1,0 +1,13 @@
+services:
+  archive-printer:
+    build: .
+    container_name: ArchivePrinter
+    ports:
+      - "8631:8631"
+    volumes:
+      - ./archive:/archive
+      - ./config:/config:ro
+    environment:
+      TZ: Europe/London
+      MDNS_HOST: archive-printer
+      MDNS_ADDRESS: 127.0.0.1

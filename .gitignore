@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Application Data & Config
+archive/
+config/
+config.json
+disk_space_history.json
+.agents/
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS specific
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# SSL
+.ssl/

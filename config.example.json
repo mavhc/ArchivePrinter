@@ -1,0 +1,42 @@
+{
+  "archive_root": "/archive",
+  "timezone": "Europe/London",
+  "printer_name": "Archive Printer",
+  "port": 8631,
+  "enable_mdns": true,
+  "mdns_host": "archive-printer",
+  "mdns_address": "127.0.0.1",
+  "require_basic_auth": false,
+  "low_disk_space_threshold_mb": 1000,
+  "web_ui_domain": "admin-printer.local",
+  "users": {
+    "admin": {
+      "password": "adminpass",
+      "role": "administrator"
+    },
+    "teacher1": {
+      "password": "teachpass",
+      "role": "staff"
+    },
+    "student1": {
+      "password": "stud1pass",
+      "role": "student"
+    }
+  },
+  "timetable": [
+    {
+      "users": ["John Smith"],
+      "days": ["monday"],
+      "start": "10:00",
+      "end": "11:00",
+      "folder": "Maths"
+    },
+    {
+      "users": ["*"],
+      "days": ["weekday"],
+      "start": "13:00",
+      "end": "14:00",
+      "folder": "Lunch"
+    }
+  ]
+}
