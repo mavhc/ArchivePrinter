@@ -295,6 +295,7 @@ class ArchivePrinterApp:
                     state=9,
                     metadata={
                         **source,
+                        "archived_at": data.get("archived_at"),
                         "pdf_path": str(path.with_suffix(".pdf")),
                         "metadata_path": str(path)
                     },
@@ -573,11 +574,13 @@ def make_handler(app: ArchivePrinterApp):
             for job in visible_jobs:
                 pdf_path = job.metadata.get("pdf_path")
                 size_str = "0 KB"
+                size_bytes_int = 0
                 if pdf_path:
                     try:
                         p = Path(pdf_path)
                         if p.exists():
                             size_bytes = p.stat().st_size
+                            size_bytes_int = size_bytes
                             if size_bytes > 1024 * 1024:
                                 size_str = f"{size_bytes / (1024 * 1024):.1f} MB"
                             else:
@@ -617,8 +620,8 @@ def make_handler(app: ArchivePrinterApp):
                     <td>#{job.job_id}</td>
                     <td class="font-semibold">{job.name}</td>
                     <td>{job.user} {role_badge}</td>
-                    <td>{size_str}</td>
-                    <td>{time_val}</td>
+                    <td data-size="{size_bytes_int}">{size_str}</td>
+                    <td data-time="{time_val}">{time_val}</td>
                     <td>{state_badge}</td>
                     <td class="text-right">{actions}</td>
                 </tr>
@@ -784,6 +787,10 @@ def make_handler(app: ArchivePrinterApp):
             outline: none;
             border-color: var(--accent-blue);
             box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }}
+        .search-input option {{
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
         }}
         table {{
             width: 100%;
@@ -953,8 +960,15 @@ def make_handler(app: ArchivePrinterApp):
                     <button type="button" class="btn btn-red" id="btn-bulk-delete" onclick="submitBulk('delete')">Delete Selected</button>
                 </div>
 
-                <div class="search-container">
-                    <input type="text" id="search-box" class="search-input" placeholder="Search by job name or username..." oninput="filterJobs()">
+                <div class="search-container" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                    <input type="text" id="search-box" class="search-input" style="flex: 1; min-width: 250px;" placeholder="Search by job name or username..." oninput="filterJobs()">
+                    <select id="age-filter" class="search-input" style="width: auto; cursor: pointer; padding-right: 2rem;" onchange="filterJobs()">
+                        <option value="0">Any Age</option>
+                        <option value="1">Older than 1 month</option>
+                        <option value="3">Older than 3 months</option>
+                        <option value="6">Older than 6 months</option>
+                        <option value="12">Older than 1 year</option>
+                    </select>
                 </div>
                 
                 <div style="overflow-x: auto;">
@@ -965,8 +979,8 @@ def make_handler(app: ArchivePrinterApp):
                                 <th>ID</th>
                                 <th>Job Name</th>
                                 <th>Owner</th>
-                                <th>Size</th>
-                                <th>Date</th>
+                                <th style="cursor: pointer;" onclick="sortTable(4)" title="Click to sort">Size ↕</th>
+                                <th style="cursor: pointer;" onclick="sortTable(5)" title="Click to sort">Date ↕</th>
                                 <th>Status</th>
                                 <th class="text-right">Actions</th>
                             </tr>
@@ -985,19 +999,70 @@ def make_handler(app: ArchivePrinterApp):
     <script>
         function filterJobs() {{
             const query = document.getElementById('search-box').value.toLowerCase().trim();
+            const ageMonths = parseInt(document.getElementById('age-filter').value);
             const rows = document.querySelectorAll('.job-row');
+            
+            const now = new Date();
+            
             rows.forEach(row => {{
                 const cells = row.getElementsByTagName('td');
-                if (cells.length >= 4) {{
+                if (cells.length >= 6) {{
                     const jobName = cells[2].textContent.toLowerCase();
                     const userName = cells[3].textContent.toLowerCase();
-                    if (jobName.includes(query) || userName.includes(query)) {{
+                    
+                    let matchSearch = jobName.includes(query) || userName.includes(query);
+                    let matchAge = true;
+                    
+                    if (ageMonths > 0) {{
+                        const timeStr = cells[5].getAttribute('data-time');
+                        if (timeStr && timeStr !== "Unknown") {{
+                            let d = new Date(timeStr.replace(' ', 'T'));
+                            if (!isNaN(d.getTime())) {{
+                                const diffMonths = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+                                if (diffMonths >= ageMonths) {{
+                                    matchAge = true;
+                                }} else {{
+                                    matchAge = false;
+                                }}
+                            }}
+                        }}
+                    }}
+                    
+                    if (matchSearch && matchAge) {{
                         row.style.display = '';
                     }} else {{
                         row.style.display = 'none';
                     }}
                 }}
             }});
+        }}
+
+        let sortDirection = {{}};
+        function sortTable(columnIndex) {{
+            const tbody = document.getElementById('jobs-tbody');
+            const rows = Array.from(tbody.querySelectorAll('.job-row'));
+            
+            sortDirection[columnIndex] = !sortDirection[columnIndex];
+            const isAsc = sortDirection[columnIndex];
+
+            rows.sort((a, b) => {{
+                const cellA = a.getElementsByTagName('td')[columnIndex];
+                const cellB = b.getElementsByTagName('td')[columnIndex];
+                
+                if (columnIndex === 4) {{
+                    const valA = parseInt(cellA.getAttribute('data-size') || '0');
+                    const valB = parseInt(cellB.getAttribute('data-size') || '0');
+                    return isAsc ? valA - valB : valB - valA;
+                }} else if (columnIndex === 5) {{
+                    const valA = cellA.getAttribute('data-time') || '';
+                    const valB = cellB.getAttribute('data-time') || '';
+                    return isAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }} else {{
+                    return 0;
+                }}
+            }});
+
+            rows.forEach(row => tbody.appendChild(row));
         }}
 
         function toggleSelectAll(master) {{
@@ -1436,17 +1501,17 @@ def make_handler(app: ArchivePrinterApp):
                                 
                                 if pdf_path and Path(pdf_path).exists():
                                     try:
-                                        rel_path = Path(pdf_path).relative_to(app.config.archive_root)
+                                        rel_path_str = str(Path(pdf_path).relative_to(app.config.archive_root))
                                     except ValueError:
-                                        rel_path = Path(pdf_path).name
-                                    zip_file.write(pdf_path, arcname=str(rel_path))
+                                        rel_path_str = Path(pdf_path).name
+                                    zip_file.write(pdf_path, arcname=rel_path_str)
                                 
                                 if metadata_path and Path(metadata_path).exists():
                                     try:
-                                        rel_path = Path(metadata_path).relative_to(app.config.archive_root)
+                                        rel_path_str2 = str(Path(metadata_path).relative_to(app.config.archive_root))
                                     except ValueError:
-                                        rel_path = Path(metadata_path).name
-                                    zip_file.write(metadata_path, arcname=str(rel_path))
+                                        rel_path_str2 = Path(metadata_path).name
+                                    zip_file.write(metadata_path, arcname=rel_path_str2)
                     
                     tmp_file.seek(0, os.SEEK_END)
                     file_size = tmp_file.tell()
@@ -1504,7 +1569,7 @@ def make_handler(app: ArchivePrinterApp):
             timetable_rules = ""
             for idx, r in enumerate(cfg.timetable):
                 users_str = ", ".join(r.users)
-                days_str = ", ".join(r.days)
+                days_str = ", ".join(str(d) for d in r.days)
                 timetable_rules += f"Rule #{idx+1}: Users={users_str}, Days={days_str}, Start={r.start}, End={r.end}, Folder={r.folder}\\n"
 
             if not timetable_rules:
@@ -1828,6 +1893,8 @@ def make_handler(app: ArchivePrinterApp):
 
         def _handle_ipp(self, request: IppRequest, metadata: dict[str, Any]) -> bytes:
             operation = request.operation
+            job: Job | None = None
+            sub: Subscription | None = None
             if operation == Operation.GET_PRINTER_ATTRIBUTES:
                 req_attrs = request.attributes.get("requested-attributes")
                 if req_attrs and isinstance(req_attrs, str):
@@ -1915,6 +1982,16 @@ def make_handler(app: ArchivePrinterApp):
                 archived = app.store.store(request.document, combined)
                 job.metadata["pdf_path"] = str(archived.pdf_path)
                 job.metadata["metadata_path"] = str(archived.metadata_path)
+                
+                try:
+                    import json
+                    with open(archived.metadata_path, 'r', encoding='utf-8') as f:
+                        j_data = json.load(f)
+                        if "archived_at" in j_data:
+                            job.metadata["archived_at"] = j_data["archived_at"]
+                except Exception:
+                    pass
+                
                 LOGGER.info("archived job %s to %s", job.job_id, archived.pdf_path)
 
                 last_document = request.attributes.get("last-document", True)
@@ -1941,6 +2018,16 @@ def make_handler(app: ArchivePrinterApp):
                 archived = app.store.store(request.document, job.metadata)
                 job.metadata["pdf_path"] = str(archived.pdf_path)
                 job.metadata["metadata_path"] = str(archived.metadata_path)
+                
+                try:
+                    import json
+                    with open(archived.metadata_path, 'r', encoding='utf-8') as f:
+                        j_data = json.load(f)
+                        if "archived_at" in j_data:
+                            job.metadata["archived_at"] = j_data["archived_at"]
+                except Exception:
+                    pass
+                
                 LOGGER.info("archived job %s to %s", job.job_id, archived.pdf_path)
 
                 resp_groups = []
@@ -2211,7 +2298,7 @@ def printer_attribute_groups(config: AppConfig, printer_uri: str, requested_attr
     sec_supported = "tls" if config.enable_tls else "none"
     more_info_uri = printer_uri.replace("ipps://", "https://", 1).replace("ipp://", "http://", 1)
 
-    all_attrs = [
+    all_attrs: list[tuple[int, str, Any]] = [
         (ValueTag.URI, "printer-uri-supported", printer_uri),
         (ValueTag.NAME_WITHOUT_LANGUAGE, "printer-name", config.printer_name),
         (ValueTag.TEXT_WITHOUT_LANGUAGE, "printer-info", config.printer_name),
@@ -2249,7 +2336,7 @@ def printer_attribute_groups(config: AppConfig, printer_uri: str, requested_attr
     if "all" in reqs:
         return [(GroupTag.PRINTER_ATTRIBUTES, all_attrs)]
 
-    filtered = []
+    filtered: list[tuple[int, str, Any]] = []
     for tag, name, val in all_attrs:
         name_lower = name.casefold()
         if name_lower in reqs:
@@ -2272,7 +2359,7 @@ def printer_attribute_groups(config: AppConfig, printer_uri: str, requested_attr
 
 
 def job_attributes(job: Job, requested_attributes: list[str] | None = None) -> tuple[GroupTag, list[tuple[int, str, Any]]]:
-    all_attrs = [
+    all_attrs: list[tuple[int, str, Any]] = [
         (ValueTag.INTEGER, "job-id", job.job_id),
         (ValueTag.URI, "job-uri", f"ipp://localhost:8631/jobs/{job.job_id}"),
         (ValueTag.NAME_WITHOUT_LANGUAGE, "job-name", job.name),
@@ -2304,10 +2391,10 @@ def job_attributes(job: Job, requested_attributes: list[str] | None = None) -> t
     if "all" in reqs or "job-description" in reqs or "job-template" in reqs:
         return (GroupTag.JOB_ATTRIBUTES, all_attrs)
 
-    filtered = []
-    for tag, name, val in all_attrs:
+    filtered: list[tuple[int, str, Any]] = []
+    for t, name, val in all_attrs:
         if name.casefold() in reqs:
-            filtered.append((tag, name, val))
+            filtered.append((t, name, val))
 
     if not filtered:
         filtered = [(ValueTag.INTEGER, "job-id", job.job_id)]
@@ -2319,7 +2406,7 @@ def jobs_attribute_groups(jobs: list[Job], requested_attributes: list[str] | Non
 
 
 def validate_job_attributes(request: IppRequest, config: AppConfig) -> tuple[Status, list[tuple[int, str, Any]]]:
-    unsupported = []
+    unsupported: list[tuple[int, str, Any]] = []
 
     doc_format = request.attributes.get("document-format")
     if doc_format:

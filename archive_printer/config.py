@@ -30,8 +30,8 @@ class TimetableRule:
     folder: str
     start: time
     end: time
-    days: set[int] = field(default_factory=set)
-    users: set[str] = field(default_factory=set)
+    days: set[int] = field(default_factory=lambda: set[int]())
+    users: set[str] = field(default_factory=lambda: set[str]())
 
     @classmethod
     def from_mapping(cls, item: dict[str, Any]) -> "TimetableRule":
@@ -71,7 +71,7 @@ class TimetableRule:
 class AppConfig:
     archive_root: Path
     timezone: ZoneInfo
-    timetable: list[TimetableRule] = field(default_factory=list)
+    timetable: list[TimetableRule] = field(default_factory=lambda: list[TimetableRule]())
     bind_host: str = "0.0.0.0"
     port: int = 8631
     printer_name: str = "Archive Printer"
@@ -90,7 +90,7 @@ class AppConfig:
     letsencrypt_dns_credentials_file: str | None = None
     low_disk_space_threshold_mb: int = 1000
     web_ui_domain: str | None = None
-    users: dict[str, dict[str, str]] = field(default_factory=dict)
+    users: dict[str, dict[str, str]] = field(default_factory=lambda: dict[str, dict[str, str]]())
     config_path: Path = Path("/config/config.json")
 
     @classmethod

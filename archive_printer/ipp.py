@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import struct
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 
 class Operation(enum.IntEnum):
@@ -144,7 +144,7 @@ def parse_request(data: bytes) -> IppRequest:
                 continue
 
         if tag == ValueTag.BEG_COLLECTION:
-            new_coll = {}
+            new_coll: dict[str, Any] = {}
             if not stack:
                 stack.append([name, new_coll, None])
             else:
@@ -164,11 +164,11 @@ def parse_request(data: bytes) -> IppRequest:
                 coll_name, coll_val, _ = stack.pop()
                 if not stack:
                     if coll_name in attributes_dict:
-                        existing = attributes_dict[coll_name]
-                        if isinstance(existing, list):
-                            existing.append(coll_val)
+                        existing_val = attributes_dict[coll_name]
+                        if isinstance(existing_val, list):
+                            cast(list[Any], existing_val).append(coll_val)
                         else:
-                            attributes_dict[coll_name] = [existing, coll_val]
+                            attributes_dict[coll_name] = [existing_val, coll_val]
                     else:
                         attributes_dict[coll_name] = coll_val
                 else:
@@ -176,11 +176,11 @@ def parse_request(data: bytes) -> IppRequest:
                     parent_member_name = stack[-1][2]
                     if parent_member_name:
                         if parent_member_name in parent_coll:
-                            existing = parent_coll[parent_member_name]
-                            if isinstance(existing, list):
-                                existing.append(coll_val)
+                            existing_val2 = parent_coll[parent_member_name]
+                            if isinstance(existing_val2, list):
+                                cast(list[Any], existing_val2).append(coll_val)
                             else:
-                                parent_coll[parent_member_name] = [existing, coll_val]
+                                parent_coll[parent_member_name] = [existing_val2, coll_val]
                         else:
                             parent_coll[parent_member_name] = coll_val
             continue
@@ -192,20 +192,20 @@ def parse_request(data: bytes) -> IppRequest:
             member_name = stack[-1][2]
             if member_name:
                 if member_name in current_coll:
-                    existing = current_coll[member_name]
-                    if isinstance(existing, list):
-                        existing.append(value)
+                    existing_val3 = current_coll[member_name]
+                    if isinstance(existing_val3, list):
+                        cast(list[Any], existing_val3).append(value)
                     else:
-                        current_coll[member_name] = [existing, value]
+                        current_coll[member_name] = [existing_val3, value]
                 else:
                     current_coll[member_name] = value
         else:
             if name in attributes_dict:
-                existing = attributes_dict[name]
-                if isinstance(existing, list):
-                    existing.append(value)
+                existing_val4 = attributes_dict[name]
+                if isinstance(existing_val4, list):
+                    cast(list[Any], existing_val4).append(value)
                 else:
-                    attributes_dict[name] = [existing, value]
+                    attributes_dict[name] = [existing_val4, value]
             else:
                 attributes_dict[name] = value
 
@@ -232,6 +232,7 @@ def parse_request_stream(stream: Any, content_length: int) -> IppRequest:
         
         if tag == GroupTag.END:
             remaining_bytes = content_length - bytes_read
+            document: str | bytes = b""
             if remaining_bytes > 5 * 1024 * 1024:
                 import tempfile
                 import os
@@ -296,7 +297,7 @@ def parse_request_stream(stream: Any, content_length: int) -> IppRequest:
                 continue
 
         if tag == ValueTag.BEG_COLLECTION:
-            new_coll = {}
+            new_coll: dict[str, Any] = {}
             if not stack:
                 stack.append([name, new_coll, None])
             else:
@@ -316,11 +317,11 @@ def parse_request_stream(stream: Any, content_length: int) -> IppRequest:
                 coll_name, coll_val, _ = stack.pop()
                 if not stack:
                     if coll_name in attributes_dict:
-                        existing = attributes_dict[coll_name]
-                        if isinstance(existing, list):
-                            existing.append(coll_val)
+                        existing_val = attributes_dict[coll_name]
+                        if isinstance(existing_val, list):
+                            cast(list[Any], existing_val).append(coll_val)
                         else:
-                            attributes_dict[coll_name] = [existing, coll_val]
+                            attributes_dict[coll_name] = [existing_val, coll_val]
                     else:
                         attributes_dict[coll_name] = coll_val
                 else:
@@ -328,11 +329,11 @@ def parse_request_stream(stream: Any, content_length: int) -> IppRequest:
                     parent_member_name = stack[-1][2]
                     if parent_member_name:
                         if parent_member_name in parent_coll:
-                            existing = parent_coll[parent_member_name]
-                            if isinstance(existing, list):
-                                existing.append(coll_val)
+                            existing_val2 = parent_coll[parent_member_name]
+                            if isinstance(existing_val2, list):
+                                cast(list[Any], existing_val2).append(coll_val)
                             else:
-                                parent_coll[parent_member_name] = [existing, coll_val]
+                                parent_coll[parent_member_name] = [existing_val2, coll_val]
                         else:
                             parent_coll[parent_member_name] = coll_val
             continue
@@ -344,20 +345,20 @@ def parse_request_stream(stream: Any, content_length: int) -> IppRequest:
             member_name = stack[-1][2]
             if member_name:
                 if member_name in current_coll:
-                    existing = current_coll[member_name]
-                    if isinstance(existing, list):
-                        existing.append(value)
+                    existing_val3 = current_coll[member_name]
+                    if isinstance(existing_val3, list):
+                        cast(list[Any], existing_val3).append(value)
                     else:
-                        current_coll[member_name] = [existing, value]
+                        current_coll[member_name] = [existing_val3, value]
                 else:
                     current_coll[member_name] = value
         else:
             if name in attributes_dict:
-                existing = attributes_dict[name]
-                if isinstance(existing, list):
-                    existing.append(value)
+                existing_val4 = attributes_dict[name]
+                if isinstance(existing_val4, list):
+                    cast(list[Any], existing_val4).append(value)
                 else:
-                    attributes_dict[name] = [existing, value]
+                    attributes_dict[name] = [existing_val4, value]
             else:
                 attributes_dict[name] = value
 
@@ -416,10 +417,10 @@ def attributes(group: GroupTag, attrs: list[tuple[int, str, Any]]) -> list[bytes
 
 
 def encode_attribute(tag: int, name: str, value: Any, is_first: bool = True) -> list[bytes]:
-    chunks = []
+    chunks: list[bytes] = []
     if isinstance(value, list) and tag != ValueTag.BEG_COLLECTION:
         first = is_first
-        for item in value:
+        for item in cast(list[Any], value):
             chunks.extend(encode_single_attribute(tag, name if first else "", item))
             first = False
     else:
@@ -428,7 +429,7 @@ def encode_attribute(tag: int, name: str, value: Any, is_first: bool = True) -> 
 
 
 def encode_single_attribute(tag: int, name: str, value: Any) -> list[bytes]:
-    chunks = []
+    chunks: list[bytes] = []
     if tag == ValueTag.BEG_COLLECTION:
         name_bytes = name.encode("utf-8")
         chunks.append(bytes([int(ValueTag.BEG_COLLECTION)]))
@@ -436,7 +437,8 @@ def encode_single_attribute(tag: int, name: str, value: Any) -> list[bytes]:
         chunks.append(name_bytes)
         chunks.append(struct.pack(">H", 0))
 
-        for m_name, m_val in value.items():
+        coll_dict = cast(dict[str, Any], value)
+        for m_name, m_val in coll_dict.items():
             chunks.append(bytes([int(ValueTag.MEMBER_ATTR_NAME)]))
             chunks.append(struct.pack(">H", 0))
             m_name_bytes = m_name.encode("utf-8")
@@ -473,7 +475,7 @@ def infer_value_tag(value: Any) -> int:
         if value.startswith(("http://", "https://", "ipp://", "ipps://", "mailto:")):
             return int(ValueTag.URI)
         return int(ValueTag.KEYWORD)
-    if isinstance(value, tuple) and len(value) == 2:
+    if isinstance(value, tuple) and len(cast(tuple[Any, ...], value)) == 2:
         if isinstance(value[0], str) and isinstance(value[1], str):
             return int(ValueTag.TEXT_WITH_LANGUAGE)
         return int(ValueTag.RANGE_OF_INTEGER)
@@ -522,30 +524,31 @@ def encode_value(tag: int, value: Any) -> bytes:
             import re
             match = re.match(r"^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d)(\+|-)(\d{2}):(\d{2})$", str(value))
             if match:
-                year, month, day, hour, minute, second, decisecond, direction, offset_hour, offset_minute = match.groups()
+                s_year, s_month, s_day, s_hour, s_min, s_sec, s_ds, direction, s_oh, s_om = match.groups()
                 return struct.pack(
                     ">HBBBBBBcBB",
-                    int(year), int(month), int(day), int(hour), int(minute), int(second), int(decisecond),
-                    direction.encode("ascii"), int(offset_hour), int(offset_minute)
+                    int(s_year), int(s_month), int(s_day), int(s_hour), int(s_min), int(s_sec), int(s_ds),
+                    direction.encode("ascii"), int(s_oh), int(s_om)
                 )
             match_no_tz = re.match(r"^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d)$", str(value))
             if match_no_tz:
-                year, month, day, hour, minute, second, decisecond = match_no_tz.groups()
+                s_year2, s_month2, s_day2, s_hour2, s_min2, s_sec2, s_ds2 = match_no_tz.groups()
                 return struct.pack(
                     ">HBBBBBB",
-                    int(year), int(month), int(day), int(hour), int(minute), int(second), int(decisecond)
+                    int(s_year2), int(s_month2), int(s_day2), int(s_hour2), int(s_min2), int(s_sec2), int(s_ds2)
                 )
             return str(value).encode("utf-8")
     if tag == ValueTag.RESOLUTION:
-        if isinstance(value, tuple) and len(value) == 3:
+        if isinstance(value, tuple) and len(cast(tuple[Any, ...], value)) == 3:
             try:
-                return struct.pack(">iiB", int(value[0]), int(value[1]), int(value[2]))
+                t3 = cast(tuple[Any, Any, Any], value)
+                return struct.pack(">iiB", int(t3[0]), int(t3[1]), int(t3[2]))
             except (ValueError, TypeError):
                 pass
         import re
-        match = re.match(r"^(\d+)x(\d+)\s*(dpi|dpcm)$", str(value).strip().lower())
-        if match:
-            h_res, v_res, unit_str = match.groups()
+        res_match = re.match(r"^(\d+)x(\d+)\s*(dpi|dpcm)$", str(value).strip().lower())
+        if res_match:
+            h_res, v_res, unit_str = res_match.groups()
             unit = 3 if unit_str == "dpi" else 4
             try:
                 return struct.pack(">iiB", int(h_res), int(v_res), unit)
@@ -553,15 +556,17 @@ def encode_value(tag: int, value: Any) -> bytes:
                 pass
         return str(value).encode("utf-8")
     if tag == ValueTag.RANGE_OF_INTEGER:
-        if isinstance(value, (list, tuple)) and len(value) == 2:
+        if isinstance(value, (list, tuple)) and len(cast(list[Any] | tuple[Any, ...], value)) == 2:
             try:
-                return struct.pack(">ii", int(value[0]), int(value[1]))
+                seq = cast(list[Any] | tuple[Any, Any], value)
+                return struct.pack(">ii", int(seq[0]), int(seq[1]))
             except (ValueError, TypeError):
                 pass
     if tag in {ValueTag.TEXT_WITH_LANGUAGE, ValueTag.NAME_WITH_LANGUAGE}:
-        if isinstance(value, (list, tuple)) and len(value) == 2:
-            lang_bytes = str(value[0]).encode("utf-8")
-            text_bytes = str(value[1]).encode("utf-8")
+        if isinstance(value, (list, tuple)) and len(cast(list[Any] | tuple[Any, ...], value)) == 2:
+            seq2 = cast(list[Any] | tuple[Any, Any], value)
+            lang_bytes = str(seq2[0]).encode("utf-8")
+            text_bytes = str(seq2[1]).encode("utf-8")
             return (
                 struct.pack(">H", len(lang_bytes))
                 + lang_bytes

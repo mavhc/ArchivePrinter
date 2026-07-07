@@ -4,6 +4,7 @@ import logging
 import re
 import socket
 from dataclasses import dataclass
+from typing import Any
 
 from .config import AppConfig
 
@@ -25,8 +26,8 @@ class MdnsAdvertisement:
 class MdnsPublisher:
     def __init__(self, config: AppConfig):
         self.config = config
-        self._zeroconf = None
-        self._service_info = None
+        self._zeroconf: Any | None = None
+        self._service_info: Any | None = None
 
     def start(self) -> None:
         if not self.config.enable_mdns:
@@ -34,7 +35,7 @@ class MdnsPublisher:
             return
 
         try:
-            from zeroconf import ServiceInfo, Zeroconf
+            from zeroconf import ServiceInfo, Zeroconf  # type: ignore
         except ImportError:
             LOGGER.warning("zeroconf package is not installed; mDNS advertisement disabled")
             return
@@ -50,7 +51,8 @@ class MdnsPublisher:
                 properties=advertisement.properties,
                 server=advertisement.server_name,
             )
-            self._zeroconf.register_service(self._service_info)
+            if self._zeroconf and self._service_info:  # type: ignore[reportUnknownMemberType]
+                self._zeroconf.register_service(self._service_info)  # type: ignore[reportUnknownMemberType]
         except Exception:
             LOGGER.exception("failed to register mDNS advertisement")
             self.stop()
@@ -68,9 +70,9 @@ class MdnsPublisher:
             return
         try:
             if self._service_info:
-                self._zeroconf.unregister_service(self._service_info)
+                self._zeroconf.unregister_service(self._service_info)  # type: ignore[reportUnknownMemberType]
         finally:
-            self._zeroconf.close()
+            self._zeroconf.close()  # type: ignore[reportUnknownMemberType]
             self._zeroconf = None
             self._service_info = None
 

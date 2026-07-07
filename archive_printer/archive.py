@@ -8,7 +8,7 @@ import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from .config import AppConfig
 
@@ -97,9 +97,14 @@ class ArchiveStore:
             else:
                 return Path(document)
 
-        document_format = metadata.get("document-format")
-        if isinstance(document_format, list):
-            document_format = document_format[0]
+        doc_fmt_raw: object = metadata.get("document-format")
+        document_format: str | None = None
+        if isinstance(doc_fmt_raw, list):
+            fmt_list = cast(list[object], doc_fmt_raw)
+            if fmt_list:
+                document_format = str(fmt_list[0])
+        elif doc_fmt_raw is not None:
+            document_format = str(doc_fmt_raw)
 
         if not self.config.pdf_converter_command:
             raise UnsupportedDocumentFormat(
